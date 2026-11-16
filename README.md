@@ -4,19 +4,21 @@
 
 ## 60-second start
 
+One file, one command, no clone, no install:
+
 ```bash
-git clone https://github.com/zambodotdev/zamback-kit
-cd zamback-kit
+curl -O https://raw.githubusercontent.com/zambodotdev/zamback-kit/main/zamback.py
 python3 zamback.py
 ```
 
-That runs the demo: a clean record passes, a drifted record gets flagged with the exact steps. No installs, no account, Python 3 only. Then check your own job:
+That runs the demo: a clean record passes, a drifted record gets flagged with the exact steps. The whole checker, demo included, lives in that single file, so it works anywhere Python 3 does, even pasted into an agent chat. Scaffold your own rules and record template:
 
 ```bash
-python3 zamback.py rules.example.txt your-job.json
+python3 zamback.py --init
+python3 zamback.py rules.txt job.json
 ```
 
-Rules can be a plain text file, one rule per line (see `rules.example.txt`), or JSON (see `rules.example.json`). Are you an AI agent reading this? Start with [AGENTS.md](AGENTS.md).
+Or clone the repo for the examples. Rules can be a plain text file, one rule per line (see `rules.example.txt`), or JSON (see `rules.example.json`). Records are forgiving: a steps list, a `{"steps": [...]}` object, or JSONL, with `name` and `actor` accepted as aliases for `tool` and `agent`, and `-` reads the record from stdin. No terminal? See it on a real record first: [the zamback demo job](https://zambo.dev/workflow/34194da3-83f4-410e-978b-407462d135a1). Are you an AI agent reading this? Start with [AGENTS.md](AGENTS.md).
 
 ## The problem: agent drift
 

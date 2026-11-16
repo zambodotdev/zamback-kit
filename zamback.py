@@ -11,14 +11,17 @@ exact steps that broke it.
 Zero dependencies. Python 3.8+.
 
 Usage:
-    python3 zamback.py                      run the bundled demo
+    python3 zamback.py                      run the demo (works with this file alone)
+    python3 zamback.py --init               scaffold rules.txt + job.json templates
     python3 zamback.py rules job.json       check a record (rules: .json or .txt)
     python3 zamback.py --json rules job.json   machine-readable verdict
+    cat job.jsonl | python3 zamback.py rules.txt -   check a record from stdin
 
 Exit code 0 when every rule matches, 1 when any rule is contradicted,
 2 on a usage or file error.
 
-Job record format (a JSON object with a "steps" list):
+Job record: a JSON object with a "steps" list, a bare steps list, or JSONL
+(one step per line). Steps may use "name" for "tool" and "actor" for "agent".
     {"steps": [
         {"agent": "orchestrator", "tool": null},
         {"agent": "executor", "tool": "code_edit", "model": "opus-5.5-ultracode"}
@@ -238,9 +241,33 @@ def load_rules(path):
         return json.load(fh).get("rules", [])
 
 
+def normalize_step(step):
+    if not isinstance(step, dict):
+        return {"tool": None}
+    out = dict(step)
+    if "tool" not in out and "name" in out:
+        out["tool"] = out["name"]
+    if "agent" not in out and "actor" in out:
+        out["agent"] = out["actor"]
+    return out
+
+
 def load_steps(path):
-    with open(path, "r", encoding="utf-8") as fh:
-        return json.load(fh).get("steps", [])
+    if path == "-":
+        raw = sys.stdin.read()
+    else:
+        with open(path, "r", encoding="utf-8") as fh:
+            raw = fh.read()
+    raw = raw.strip()
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = [json.loads(line) for line in raw.splitlines() if line.strip()]
+    if isinstance(data, dict):
+        data = data.get("steps", [])
+    return [normalize_step(step) for step in data]
 
 
 def run_check(rules, steps):
@@ -311,40 +338,115 @@ def check_files(rules_path, job_path, json_mode):
     return print_human(rules, steps, results, contradicted)
 
 
-def run_demo():
-    here = os.path.dirname(os.path.abspath(__file__))
-    rules_path = os.path.join(here, "rules.example.json")
-    good_path = os.path.join(here, "job.good.json")
-    drifted_path = os.path.join(here, "job.drifted.json")
-    for path in (rules_path, good_path, drifted_path):
-        if not os.path.exists(path):
-            print("zamback demo: missing bundled file %s" % path)
-            print("Run a check instead: python3 zamback.py rules job.json")
-            return 2
-    print("ZAMBACK DEMO")
-    print("The rules (rules.example.json): an orchestrator that holds no")
-    print("tools, executors on one named model, a verify step never skipped.")
-    print()
-    print("Checking the clean record (job.good.json):")
-    good_code = check_files(rules_path, good_path, json_mode=False)
-    print()
-    print("Checking the drifted record (job.drifted.json):")
-    drift_code = check_files(rules_path, drifted_path, json_mode=False)
+DEMO_RULES = [
+    {"id": "orchestrator-holds-no-tools", "type": "agent_holds_no_tools", "agent": "orchestrator"},
+    {"id": "executors-run-the-named-model", "type": "field_must_equal", "agent": "executor", "key": "model", "value": "opus-5.5-ultracode"},
+    {"id": "verify-step-never-skipped", "type": "tool_required", "tool": "verify_check"},
+]
+DEMO_GOOD = [
+    {"agent": "orchestrator", "tool": None},
+    {"agent": "executor", "tool": "code_edit", "model": "opus-5.5-ultracode"},
+    {"agent": "executor", "tool": "test_run", "model": "opus-5.5-ultracode"},
+    {"agent": "executor", "tool": "verify_check", "model": "opus-5.5-ultracode"},
+]
+DEMO_DRIFTED = [
+    {"agent": "orchestrator", "tool": "code_edit"},
+    {"agent": "executor", "tool": "code_edit", "model": "fable-5"},
+    {"agent": "executor", "tool": "test_run", "model": "fable-5"},
+]
+
+INIT_RULES = """# Your standing rules, written BEFORE the run. One rule per line.
+# Lines starting with # are ignored. These examples are one real setup:
+# an orchestrator that plans and holds no tools, executors on one named
+# model, a verify step never skipped, verify before any deploy.
+orchestrator holds no tools
+executor model = opus-5.5-ultracode
+required tool: verify_check
+verify_check before deploy
+max steps: 40
+"""
+
+INIT_JOB = {
+    "steps": [
+        {"agent": "orchestrator", "tool": None},
+        {"agent": "executor", "tool": "code_edit", "model": "opus-5.5-ultracode"},
+        {"agent": "executor", "tool": "verify_check", "model": "opus-5.5-ultracode"},
+    ]
+}
+
+
+def run_init():
+    wrote = []
+    if not os.path.exists("rules.txt"):
+        with open("rules.txt", "w", encoding="utf-8") as fh:
+            fh.write(INIT_RULES)
+        wrote.append("rules.txt")
+    if not os.path.exists("job.json"):
+        with open("job.json", "w", encoding="utf-8") as fh:
+            json.dump(INIT_JOB, fh, indent=2)
+            fh.write("\n")
+        wrote.append("job.json")
+    if wrote:
+        print("Created: %s" % ", ".join(wrote))
+    else:
+        print("rules.txt and job.json already exist here; leaving them untouched.")
+    print("Try it:  python3 zamback.py rules.txt job.json")
+    print("Then edit rules.txt with your real rules and job.json with your real record.")
+    return 0
+
+
+def demo_verdicts(good_code, drift_code, closing):
     print()
     if good_code == 0 and drift_code == 1:
         print("Demo done: the clean record passed, the drifted record got")
         print("flagged with the exact steps. That is the whole idea.")
-        print("Your turn: python3 zamback.py rules.example.json your-job.json")
-        print("Rules can be plain text too: see rules.example.txt.")
+        for line in closing:
+            print(line)
         return 0
     print("Demo failed: the checker did not behave as documented.")
     return 1
 
 
+def run_demo():
+    here = os.path.dirname(os.path.abspath(__file__))
+    rules_path = os.path.join(here, "rules.example.json")
+    good_path = os.path.join(here, "job.good.json")
+    drifted_path = os.path.join(here, "job.drifted.json")
+    print("ZAMBACK DEMO")
+    print("The rules: an orchestrator that holds no tools, executors on")
+    print("one named model, a verify step never skipped.")
+    print()
+    if all(os.path.exists(p) for p in (rules_path, good_path, drifted_path)):
+        print("Checking the clean record (job.good.json):")
+        good_code = check_files(rules_path, good_path, json_mode=False)
+        print()
+        print("Checking the drifted record (job.drifted.json):")
+        drift_code = check_files(rules_path, drifted_path, json_mode=False)
+        return demo_verdicts(good_code, drift_code, [
+            "Your turn: python3 zamback.py rules.example.json your-job.json",
+            "Rules can be plain text too: see rules.example.txt.",
+            "Or scaffold your own: python3 zamback.py --init",
+        ])
+    print("Checking the clean record (bundled example):")
+    results, contradicted = run_check(DEMO_RULES, DEMO_GOOD)
+    good_code = print_human(DEMO_RULES, DEMO_GOOD, results, contradicted)
+    print()
+    print("Checking the drifted record (bundled example):")
+    results, contradicted = run_check(DEMO_RULES, DEMO_DRIFTED)
+    drift_code = print_human(DEMO_RULES, DEMO_DRIFTED, results, contradicted)
+    return demo_verdicts(good_code, drift_code, [
+        "Your turn: python3 zamback.py --init",
+        "That scaffolds rules.txt and job.json. Edit them, then run:",
+        "python3 zamback.py rules.txt job.json",
+    ])
+
+
 def main(argv):
+    if "--init" in argv:
+        return run_init()
     args = [a for a in argv[1:] if a != "--json"]
     json_mode = "--json" in argv
-    if not args:
+    if not args or args == ["--demo"]:
         return run_demo()
     if len(args) != 2:
         print(__doc__)

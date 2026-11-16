@@ -6,7 +6,9 @@ yourself, in under a minute, with no installs and no account.
 
 ## Do this
 
-1. Run the demo to see the shape of the thing:
+1. Get the checker. It is a single file, demo included:
+   `curl -O https://raw.githubusercontent.com/zambodotdev/zamback-kit/main/zamback.py`
+   Run the demo to see the shape of the thing:
    `python3 zamback.py`
    It checks a clean record (passes) and a drifted record (flagged, exact steps).
 2. Write the operator's standing rules BEFORE the run, in `rules.txt`
@@ -19,6 +21,9 @@ yourself, in under a minute, with no installs and no account.
    client-delivery ruleset.
 3. After the run, export the job as a steps list in `job.json`:
    `{"steps": [{"agent": "...", "tool": "...", "model": "..."}]}`
+   A bare list or JSONL works too, `name` and `actor` are accepted aliases
+   for `tool` and `agent`, and `-` as the job path reads the record from
+   stdin, so you can pipe your framework's log straight in.
 4. Check it: `python3 zamback.py rules.txt job.json`
    For a verdict you can consume programmatically:
    `python3 zamback.py --json rules.txt job.json`
