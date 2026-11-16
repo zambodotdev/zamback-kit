@@ -266,7 +266,12 @@ def load_steps(path):
     except json.JSONDecodeError:
         data = [json.loads(line) for line in raw.splitlines() if line.strip()]
     if isinstance(data, dict):
-        data = data.get("steps", [])
+        if "steps" in data:
+            data = data.get("steps") or []
+        elif any(key in data for key in ("tool", "name", "agent", "actor")):
+            data = [data]
+        else:
+            data = []
     return [normalize_step(step) for step in data]
 
 
