@@ -78,6 +78,10 @@ python3 zamback.py examples/swarm.rules.json examples/swarm.drifted.json
 
 Same shape for client work: `examples/client-delivery.rules.txt` is three ordering rules (draft before review, review before sign-off, sign-off before deliver), and its drifted record is the two-step delivery that causes the dispute: drafted, then straight to the client. The check names it in one line: `'deliver' ran but 'client_signoff' never ran`. There is also a GitHub Actions drift gate in `examples/zamback.yml`: the build fails on drift, with the offending steps in the log.
 
+## The drift-guard recipe
+
+The pattern also ships as a starter recipe in the exact format of the [Zambo workflow library](https://zambo.dev/workflows/tasks/): [recipes/agent-drift-guard.v1.json](recipes/agent-drift-guard.v1.json). State the rule, run the work, close the record, check it against the rule. It validates clean against the library's published schema, and it was run end to end on November 16, 2026: the full story, with the live proof record, is in [ARTICLE.md](ARTICLE.md).
+
 ## Honest limits
 
 zamback does not reach into a live session and steer. It cannot stop an agent mid-drift inside somebody else's stack. What it kills is *silent* drift: the rule is written down before the run, the steps are on record, and the check names the step where the record and the rule parted. Detection you can prove beats prevention you have to trust.
