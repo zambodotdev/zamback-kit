@@ -1,0 +1,8 @@
+# The standing rules for one agent setup, written BEFORE the run.
+# Plain form: one rule per line. Same rules as rules.example.json.
+# Shaped on a real setup: an orchestrator that plans and holds no tools,
+# executor sub-agents on one named model, a verify step never skipped.
+
+orchestrator holds no tools
+executor model = opus-5.5-ultracode
+required tool: verify_check

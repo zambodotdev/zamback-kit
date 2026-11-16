@@ -2,6 +2,22 @@
 
 **Get your agent back.** Check an AI agent's job record against the rules you wrote before the run, and see exactly where it drifted.
 
+## 60-second start
+
+```bash
+git clone https://github.com/zambodotdev/zamback-kit
+cd zamback-kit
+python3 zamback.py
+```
+
+That runs the demo: a clean record passes, a drifted record gets flagged with the exact steps. No installs, no account, Python 3 only. Then check your own job:
+
+```bash
+python3 zamback.py rules.example.txt your-job.json
+```
+
+Rules can be a plain text file, one rule per line (see `rules.example.txt`), or JSON (see `rules.example.json`). Are you an AI agent reading this? Start with [AGENTS.md](AGENTS.md).
+
 ## The problem: agent drift
 
 Agent drift is what happens when an AI agent quietly stops following your standing rules. The rule held for months. Then the context slipped, the agent forgot it, and it did the expensive, wrong thing instead: it spun up the wrong sub-agents on the wrong model, skipped the check step, deployed the thing it was told to only ever draft. Nothing in the chat announces the change. You find out when the usage bill or the breakage arrives.
@@ -17,12 +33,13 @@ A rule that lives in a chat evaporates. A rule that lives in the job record can 
 
 Drift stops being a vibe you notice three months later. It is a flag on the exact step where it broke.
 
-## Run it
-
-Zero dependencies, Python 3.8+.
+## Run it on the examples
 
 ```bash
 python3 zamback.py rules.example.json job.good.json
+# MATCHED       orchestrator-holds-no-tools
+# MATCHED       executors-run-the-named-model
+# MATCHED       verify-step-never-skipped
 # RESULT: ZAMBACK. Every rule matched the record.
 
 python3 zamback.py rules.example.json job.drifted.json
@@ -36,7 +53,11 @@ python3 zamback.py rules.example.json job.drifted.json
 # RESULT: DRIFT. 3 of 3 rules contradicted.
 ```
 
-Exit code 0 when every rule matches, 1 on drift, so it drops straight into CI or a cron.
+Exit code 0 when every rule matches, 1 on drift, so it drops straight into CI or a cron. Agents and scripts get the machine-readable verdict with `--json`:
+
+```bash
+python3 zamback.py --json rules.example.txt your-job.json
+```
 
 Rule types: `agent_holds_no_tools`, `field_must_equal`, `tool_allowlist`, `tool_required`, `max_steps`. The job record is a simple JSON steps list; adapt the exporter, keep the checker dumb.
 
@@ -50,7 +71,7 @@ The checker is only as good as the record. If the record can be edited after the
 
 This kit checks any record you bring it. [Zambo](https://zambo.dev) is where the record is created automatically: every job run through Zambo's tools leaves a verifiable receipt for each step under the AER-1 standard, the receipts group into one workflow record anyone can re-check, and a handover carries the record to the next session or the client. Free tier daily, pickup always free.
 
-See a real one: [the zamback demo job](https://zambo.dev/workflow/34194da3-83f4-410e-978b-407462d135a1), a three-step live price scan run under a rule written before it started, every step receipted, refusals included.
+See a real one: [the zamback demo job](https://zambo.dev/workflow/34194da3-83f4-410e-978b-407462d135a1), a three-step live price scan run under a rule written before it started, every step receipted, refusals included. The full write-up: [Agent Drift, and how to get it zamback](https://rambozambodotdev.gitlab.io/aer1-hub/agent-drift.html).
 
 ## Credit
 
