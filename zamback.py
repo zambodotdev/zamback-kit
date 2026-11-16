@@ -29,12 +29,17 @@ Rules, plain form (.txt, one rule per line):
     orchestrator holds no tools
     executor model = opus-5.5-ultracode
     required tool: verify_check
+    required tool: client_signoff in phase deliver
+    verify_check before deploy
     allowed tools: code_edit, test_run, verify_check
     max steps: 40
 Lines starting with # are comments.
 
 Rule types (JSON): agent_holds_no_tools, field_must_equal, tool_allowlist,
-tool_required, max_steps.
+tool_required, tool_before, max_steps. field_must_equal and tool_required
+accept an optional "phase" scope (steps may carry a "phase" label, so a rule
+can bind one phase of a multi-step workflow); max_steps accepts an optional
+"agent" scope; tool_before enforces ordering between two tools.
 """
 
 import json
@@ -81,6 +86,8 @@ def check_rule(rule, steps):
                 continue
             if "tool" in rule and step.get("tool") != rule["tool"]:
                 continue
+            if "phase" in rule and step.get("phase") != rule["phase"]:
+                continue
             actual = step_field(step, key)
             if actual != value:
                 problems.append(
@@ -99,15 +106,55 @@ def check_rule(rule, steps):
 
     elif rtype == "tool_required":
         tool = rule.get("tool")
-        if not any(step.get("tool") == tool for step in steps):
-            problems.append("no step called required tool %r" % (tool,))
+        phase = rule.get("phase")
+        found = any(
+            step.get("tool") == tool
+            and (phase is None or step.get("phase") == phase)
+            for step in steps
+        )
+        if not found:
+            if phase:
+                problems.append(
+                    "no step in phase %r called required tool %r" % (phase, tool)
+                )
+            else:
+                problems.append("no step called required tool %r" % (tool,))
+
+    elif rtype == "tool_before":
+        first, then = rule.get("first"), rule.get("then")
+        first_idx = next(
+            (i for i, s in enumerate(steps, 1) if s.get("tool") == first), None
+        )
+        then_idx = next(
+            (i for i, s in enumerate(steps, 1) if s.get("tool") == then), None
+        )
+        if then_idx is not None and first_idx is None:
+            problems.append(
+                "step %d: %r ran but %r never ran (rule: %s before %s)"
+                % (then_idx, then, first, first, then)
+            )
+        elif then_idx is not None and first_idx > then_idx:
+            problems.append(
+                "step %d: %r ran before %r at step %d (rule: %s before %s)"
+                % (then_idx, then, first, first_idx, first, then)
+            )
 
     elif rtype == "max_steps":
         count = rule.get("count", 0)
-        if len(steps) > count:
-            problems.append(
-                "job ran %d steps (rule: max %d)" % (len(steps), count)
-            )
+        agent = rule.get("agent")
+        scoped = [
+            s for s in steps if agent is None or s.get("agent") == agent
+        ]
+        if len(scoped) > count:
+            if agent:
+                problems.append(
+                    "%s ran %d steps (rule: max %d)"
+                    % (agent, len(scoped), count)
+                )
+            else:
+                problems.append(
+                    "job ran %d steps (rule: max %d)" % (len(scoped), count)
+                )
 
     else:
         problems.append("unknown rule type %r" % (rtype,))
@@ -133,12 +180,20 @@ def parse_plain_rules(text):
                 "agent": agent,
             })
         elif low.startswith("required tool:"):
-            tool = line.split(":", 1)[1].strip()
-            rules.append({
-                "id": "required-tool-%s" % tool,
+            rest = line.split(":", 1)[1].strip()
+            phase = None
+            if " in phase " in rest:
+                rest, phase = rest.rsplit(" in phase ", 1)
+                rest, phase = rest.strip(), phase.strip()
+            rule = {
+                "id": "required-tool-%s" % rest,
                 "type": "tool_required",
-                "tool": tool,
-            })
+                "tool": rest,
+            }
+            if phase:
+                rule["phase"] = phase
+                rule["id"] = "required-tool-%s-in-%s" % (rest, phase)
+            rules.append(rule)
         elif low.startswith("allowed tools:"):
             tools = [t.strip() for t in line.split(":", 1)[1].split(",") if t.strip()]
             rules.append({"id": "tool-allowlist", "type": "tool_allowlist", "tools": tools})
@@ -147,6 +202,15 @@ def parse_plain_rules(text):
                 "id": "max-steps",
                 "type": "max_steps",
                 "count": int(line.split(":", 1)[1].strip()),
+            })
+        elif " before " in low:
+            first, then = line.split(" before ", 1)
+            first, then = first.strip(), then.strip()
+            rules.append({
+                "id": "%s-before-%s" % (first, then),
+                "type": "tool_before",
+                "first": first,
+                "then": then,
             })
         elif "=" in line:
             left, value = line.split("=", 1)

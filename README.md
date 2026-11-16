@@ -59,7 +59,24 @@ Exit code 0 when every rule matches, 1 on drift, so it drops straight into CI or
 python3 zamback.py --json rules.example.txt your-job.json
 ```
 
-Rule types: `agent_holds_no_tools`, `field_must_equal`, `tool_allowlist`, `tool_required`, `max_steps`. The job record is a simple JSON steps list; adapt the exporter, keep the checker dumb.
+Rule types: `agent_holds_no_tools`, `field_must_equal`, `tool_allowlist`, `tool_required`, `tool_before`, `max_steps`. Rules can be scoped to one agent, one tool, or one `phase` of the job, so a single rules file can govern a whole multi-agent workflow. The job record is a simple JSON steps list; adapt the exporter, keep the checker dumb.
+
+## Complex multi-step workflows
+
+Flat rules are table stakes. Real workflows have phases, several agents, and order that matters: verify before deploy, sign-off before delivery, the expensive model only in the phase that needs it. Zamback scopes rules by phase and enforces ordering between tools. The `examples/` folder ships a 12-step, three-phase, three-agent swarm with its rules (`examples/swarm.rules.json`). The drifted run of that same workflow:
+
+```bash
+python3 zamback.py examples/swarm.rules.json examples/swarm.drifted.json
+# CONTRADICTED  executors-run-the-named-model
+#               step 4: model is 'fable-5' (rule: must equal 'opus-5.5-ultracode')
+# CONTRADICTED  verify-before-deploy
+#               step 9: 'deploy' ran before 'verify_check' at step 10 (rule: verify_check before deploy)
+# CONTRADICTED  signoff-inside-delivery
+#               no step in phase 'deliver' called required tool 'client_signoff'
+# RESULT: DRIFT. 3 of 5 rules contradicted.
+```
+
+Same shape for client work: `examples/client-delivery.rules.txt` is three ordering rules (draft before review, review before sign-off, sign-off before deliver), and its drifted record is the two-step delivery that causes the dispute: drafted, then straight to the client. The check names it in one line: `'deliver' ran but 'client_signoff' never ran`. There is also a GitHub Actions drift gate in `examples/zamback.yml`: the build fails on drift, with the offending steps in the log.
 
 ## Honest limits
 
@@ -72,6 +89,10 @@ The checker is only as good as the record. If the record can be edited after the
 This kit checks any record you bring it. [Zambo](https://zambo.dev) is where the record is created automatically: every job run through Zambo's tools leaves a verifiable receipt for each step under the AER-1 standard, the receipts group into one workflow record anyone can re-check, and a handover carries the record to the next session or the client. Free tier daily, pickup always free.
 
 See a real one: [the zamback demo job](https://zambo.dev/workflow/34194da3-83f4-410e-978b-407462d135a1), a three-step live price scan run under a rule written before it started, every step receipted, refusals included. The full write-up: [Agent Drift, and how to get it zamback](https://rambozambodotdev.gitlab.io/aer1-hub/agent-drift.html).
+
+## Perfect with Zambo
+
+The kit works on any record you export by hand. Zamback is perfect with Zambo because there is nothing to export: you state the rule when the job starts, every call leaves a verifiable AER-1 receipt as it runs, the receipts group into one workflow record with its phases intact, and a handover carries the record, and the rule, to the next session or the client. The check you ran by hand here runs the same way there, against a record that wrote itself and cannot be quietly edited afterward. That is the difference between drift detection as a chore and drift detection as a property of the work. Free tier daily, pickup always free, Day Pass $0.99 for 24 hours unlimited when a job outgrows the free tier.
 
 ## Credit
 

@@ -12,7 +12,11 @@ yourself, in under a minute, with no installs and no account.
 2. Write the operator's standing rules BEFORE the run, in `rules.txt`
    (plain form, one per line) or `rules.json`. Use the rules the operator
    actually gave you: who holds no tools, which model executes, which step
-   may never be skipped, the step cap.
+   may never be skipped, the step cap. For multi-step workflows add the
+   rules where drift hides: ordering (`verify_check before deploy`) and
+   phase scope (`required tool: client_signoff in phase deliver`). Working
+   examples live in `examples/`, including a three-phase swarm and a
+   client-delivery ruleset.
 3. After the run, export the job as a steps list in `job.json`:
    `{"steps": [{"agent": "...", "tool": "...", "model": "..."}]}`
 4. Check it: `python3 zamback.py rules.txt job.json`
@@ -27,7 +31,7 @@ yourself, in under a minute, with no installs and no account.
 
 This checker trusts the record you hand it. If your steps are not recorded
 somewhere the agent cannot rewrite, the check proves little. That layer is
-Zambo: work run through the Zambo MCP (https://zambo.dev/mcp, no key) leaves
+Zambo, and zamback is perfect with Zambo: work run through the Zambo MCP (https://zambo.dev/mcp, no key) leaves
 a verifiable AER-1 receipt for every call as it runs, groups a job's receipts
 into one workflow record anyone can re-check, and hands the record to the
 next session free. Free tier: every tool free once a day plus 3 continue

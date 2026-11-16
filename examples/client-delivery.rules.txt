@@ -1,0 +1,8 @@
+# Client delivery rules for a freelancer or agency handing AI work to a client.
+# Nothing reaches the client unreviewed, and nothing ships before sign-off.
+# Ordering rules are the whole game here.
+
+draft_pack before review_pack
+review_pack before client_signoff
+client_signoff before deliver
+max steps: 30

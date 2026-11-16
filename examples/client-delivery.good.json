@@ -1,0 +1,1 @@
+{"comment":"A client delivery that followed the rules: drafted, reviewed, signed off, then delivered.","steps":[{"agent":"agent","phase":"build","tool":"draft_pack"},{"agent":"agent","phase":"review","tool":"review_pack"},{"agent":"client","phase":"approve","tool":"client_signoff"},{"agent":"agent","phase":"send","tool":"deliver"}]}

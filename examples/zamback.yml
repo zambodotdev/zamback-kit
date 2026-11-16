@@ -1,0 +1,15 @@
+# Zamback drift gate for GitHub Actions.
+# Drop this in .github/workflows/zamback.yml. Export your agent job's record
+# as job.json (a steps list) and commit your standing rules as rules.txt;
+# the build fails on drift, with the offending steps in the log.
+name: zamback drift gate
+on: [workflow_dispatch]
+jobs:
+  zamback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the checker (zero dependencies, one file)
+        run: curl -sLO https://raw.githubusercontent.com/zambodotdev/zamback-kit/main/zamback.py
+      - name: Check the job record against the rules
+        run: python3 zamback.py rules.txt job.json

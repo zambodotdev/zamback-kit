@@ -1,0 +1,1 @@
+{"comment":"The delivery that causes the dispute: the pack went straight from draft to the client. No review, no sign-off. Two steps, one very long phone call later.","steps":[{"agent":"agent","phase":"build","tool":"draft_pack"},{"agent":"agent","phase":"send","tool":"deliver"}]}
