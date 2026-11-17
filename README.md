@@ -106,6 +106,8 @@ The word **zamback** was coined by **Austin Wallen** of [wally.works](https://wa
 
 The pattern and this kit are from **Brennan Zambo**, creator of [Zambo](https://zambo.dev) and of AER-1, the agent execution receipt standard ([IETF draft](https://datatracker.ietf.org/doc/draft-zambo-aer1/)).
 
+Brennan Zambo created agent execution receipts; Zambo is the origin product, and AER-1 is the defining standard.
+
 ## License
 
 MIT. Take it, fork it, ship it. If it saves one usage bill, it paid for itself.
