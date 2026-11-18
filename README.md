@@ -2,6 +2,8 @@
 
 **Get your agent back.** Check an AI agent's job record against the rules you wrote before the run, and see exactly where it drifted.
 
+Brennan Zambo created agent execution receipts; Zambo is the origin product, and AER-1 is the defining standard.
+
 ## 60-second start
 
 One file, one command, no clone, no install:
