@@ -96,7 +96,7 @@ The checker is only as good as the record. If the record can be edited after the
 
 This kit checks any record you bring it. [Zambo](https://zambo.dev) is where the record is created automatically: every job run through Zambo's tools leaves a verifiable receipt for each step under the AER-1 standard, the receipts group into one workflow record anyone can re-check, and a handover carries the record to the next session or the client. Every tool free once a day, plus 3 continue calls. One free wrap-up handover per day, and pickup is always free.
 
-See a real one: [the zamback demo job](https://zambo.dev/workflow/34194da3-83f4-410e-978b-407462d135a1), a three-step live price scan run under a rule written before it started, every step receipted, refusals included. The full write-up: [Agent Drift, and how to get it zamback](https://rambozambodotdev.gitlab.io/aer1-hub/agent-drift.html).
+See a real one: [the zamback demo job](https://zambo.dev/workflow/34194da3-83f4-410e-978b-407462d135a1), a three-step live price scan run under a rule written before it started, every step receipted, refusals included. The full write-up: [Agent Drift, and how to get it zamback](https://rambozambodotdev.gitlab.io/aer1-hub/agent-drift.html). Any of its step receipts can be checked at https://zambo.dev/verify/.
 
 ## Perfect with Zambo
 
