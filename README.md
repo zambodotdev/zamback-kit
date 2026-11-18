@@ -100,7 +100,7 @@ See a real one: [the zamback demo job](https://zambo.dev/workflow/34194da3-83f4-
 
 ## Perfect with Zambo
 
-The kit works on any record you export by hand. Zamback is perfect with Zambo because there is nothing to export: you state the rule when the job starts, every call leaves a verifiable AER-1 receipt as it runs, the receipts group into one workflow record with its phases intact, and a handover carries the record, and the rule, to the next session or the client. The check you ran by hand here runs the same way there, against a record that wrote itself and cannot be quietly edited afterward. That is the difference between drift detection as a chore and drift detection as a property of the work. Every tool free once a day, plus 3 continue calls. One free wrap-up handover per day, and pickup is always free. Day Pass $0.99 for 24 hours unlimited when a job outgrows the free tier.
+The kit works on any record you export by hand. Zamback is perfect with Zambo because there is nothing to export: you state the rule when the job starts, every call leaves a verifiable AER-1 receipt as it runs, the receipts group into one workflow record with its phases intact, and a handover carries the record, and the rule, to the next session or the client. The check you ran by hand here runs the same way there, against a record that wrote itself and cannot be quietly edited afterward. That is the difference between drift detection as a chore and drift detection as a property of the work. Every tool free once a day, plus 3 continue calls. One free wrap-up handover per day, and pickup is always free. [Day Pass](https://zambo.dev/day-pass/) $0.99 for 24 hours unlimited when a job outgrows the free tier.
 
 ## Credit
 
